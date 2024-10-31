@@ -11,9 +11,16 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
+        $query = Product::query();
+
+        // Jika ada parameter kategori, tambahkan filter
+        if ($request->has('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        $products = $query->get();
 
         if ($products->isEmpty()) {
             return response()->json([
@@ -26,6 +33,21 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Products retrieved successfully',
             'data' => $products
+        ], 200);
+    }
+
+    // Metode untuk pencarian produk berdasarkan nama
+    public function search(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $products = Product::where('product_name', 'LIKE', '%' . $request->name . '%')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $products,
         ], 200);
     }
 
@@ -43,7 +65,6 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->json()->all();
-        // dd($data);
         $validator = Validator::make($data, [
             'product_name' => 'required|string|max:255',
             'description' => 'required|string',
@@ -92,7 +113,7 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Product retrieved successfully',
             'data' => $product
-        ],200);
+        ], 200);
     }
 
     /**
@@ -109,7 +130,6 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
         $data = $request->all();
-        // dd($data);
         $validator = Validator::make($data, [
             'product_name' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
